@@ -17,83 +17,59 @@ namespace DynamicInheritance
         public static Type AddBaseType<T>(this object obj)
         {
             var objType = obj.GetType().Name;
-            var assembly = obj.GetType().Assembly;
             var newAssemblyName = "DynamicAssembly";
 
-
+            var resolver = new DefaultAssemblyResolver();
 
             var aName = new AssemblyNameDefinition(newAssemblyName, new Version());
-            var assy = AssemblyDefinition.CreateAssembly(aName, objType, ModuleKind.Windows);
-            var newType = new TypeDefinition(newAssemblyName, objType+"New", Mono.Cecil.TypeAttributes.Public);
-
-
-            var newModule = ModuleDefinition.CreateModule(objType,ModuleKind.Dll);
-
+            var assy = AssemblyDefinition.CreateAssembly(aName, objType, ModuleKind.Dll);
             
+
+            var corLib = resolver.Resolve("mscorlib");
+
+            var newModule = ModuleDefinition.CreateModule("The Module",new ModuleParameters{Runtime = TargetRuntime.Net_4_0,AssemblyResolver = resolver, Kind = ModuleKind.Dll});
+
+            newModule.Import(corLib.MainModule.GetType("System.Object"));
 
 
             var originalAssembly = AssemblyDefinition.ReadAssembly(obj.GetType().Assembly.Location);
             var typeD = originalAssembly.MainModule.Types.First(x => x.Name.Equals(objType));
             var methodsToCopy = typeD.Methods;
 
-            assy.Modules.Add(newModule);
-            newModule.Types.Add(newType);
 
+            var newType = new TypeDefinition(newAssemblyName, objType+"New", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class,newModule.TypeSystem.Object);
+            
+            newModule.Types.Add(newType);
+            assy.Modules.Add(newModule);
             foreach (var method in methodsToCopy)
             {
-                var typedef = typeD.Resolve();
                 
                 var newMethod = ObjectExtensions.CopyMethod(method,newType, assy);
 
-                //var il = newMethod.Body.GetILProcessor();
-
-                //newMethod.CallingConvention = method.CallingConvention;
-                //newMethod.DeclaringType = method.DeclaringType;
-
-                //newType.Methods.Add(newMethod);
-
-                //var body = method.GetMethodBody();
-                //if (body == null)
-                //    continue;
-
-
-                //var newMethod = tb.DefineMethod(method.Name, method.Attributes, method.CallingConvention,
-                //                                method.ReturnType,
-                //                                method.GetParameters().Select(x => x.ParameterType).ToArray());
-
-
-
-
-
-
-
-                //newMethod.CreateMethodBody(bytes, bytes.Length);
-
-
+                newType.Methods.Add(newMethod);
 
 
             }
-
-            
-            var memoryStream = new MemoryStream();
-
 
 
             Type dynamicType;
 
             using (var stream = new MemoryStream())
             {
-                assy.Write(stream);
+                newModule.Write(stream);
                 Assembly ass = Assembly.Load(stream.ToArray());
-                dynamicType = assembly.GetType(newType.FullName);
-                var rtype = ass.GetType(newType.FullName);
+
+
+                dynamicType = ass.GetType(newType.FullName);
+
+
+          
             }
 
                 
-
             
-            var typeToRet = Type.GetType(newType.FullName + ", " + assy.FullName);
-            return typeToRet;
+            
+            return dynamicType;
 
 
 
@@ -160,7 +136,7 @@ namespace DynamicInheritance
                 }
                 newMethod.Body.Instructions.Add(newInstruction);
             }
-            targetType.Methods.Add(newMethod);
+            
             return newMethod;
         }
 

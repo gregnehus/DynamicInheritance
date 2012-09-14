@@ -27,7 +27,11 @@ namespace DynamicInheritance.Specs
 
         Because of = () => _subject = Activator.CreateInstance(_resultType);
 
-        It should_retain_the_original_method_functionality = () => _subject.GetSuperName().ShouldEqual("SomeObject");
+        It should_retain_the_original_method_functionality = () =>
+                                                                 {
+                                                                     var t = _subject.GetSuperName();
+                                                                     t.ShouldEqual("SomeObject");
+                                                                 };
 
     }
 }
