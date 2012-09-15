@@ -10,60 +10,39 @@ namespace DynamicInheritance
     {
         public static Type AddBaseType<T>(this object obj)
         {
+            
             var objType = obj.GetType().Name;
-            var newAssemblyName = "DynamicAssembly";
+            var newAssemblyName = obj.GetAssemblyDefinition().Name.Name;
 
             var resolver = new DefaultAssemblyResolver();
 
-            
-
-            var corLib = resolver.Resolve("mscorlib");
-
             var newModule = ModuleDefinition.CreateModule("The Module",new ModuleParameters{Runtime = TargetRuntime.Net_4_0,AssemblyResolver = resolver, Kind = ModuleKind.Dll});
-
-            newModule.Import(corLib.MainModule.GetType("System.Object"));
-            newModule.Import(corLib.MainModule.GetType("System.String"));
-
+            var baseType = typeof(T).GetImportedTypeReference(newModule);
 
             var typeToCopy = obj.GetTypeDefinition();
             var methodsToCopy = typeToCopy.Methods;
 
-
-            var newType = new TypeDefinition(newAssemblyName, objType+"New", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class,newModule.TypeSystem.Object);
+            var newType = new TypeDefinition(newAssemblyName, objType + "New", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, baseType);
             
             newModule.Types.Add(newType);
+
             foreach (var method in methodsToCopy)
             {
-                
                 var newMethod = method.Copy(newType);
-
                 newType.Methods.Add(newMethod);
-
-
             }
 
 
             Type dynamicType;
-            newModule.Write("C:\\test.dll");
             using (var stream = new MemoryStream())
             {
                 newModule.Write(stream);
-                Assembly ass = Assembly.Load(stream.ToArray());
+                var assembly = Assembly.Load(stream.ToArray());
 
-
-                dynamicType = ass.GetType(newType.FullName);
-
-
-          
+                dynamicType = assembly.GetType(newType.FullName);
             }
-
-                
-            
             
             return dynamicType;
-
-
-
 
         }
 
@@ -78,6 +57,14 @@ namespace DynamicInheritance
             return AssemblyDefinition.ReadAssembly(obj.GetType().Assembly.Location);
         }
         
+        public static TypeReference GetImportedTypeReference(this Type type, ModuleDefinition moduleToImportTo)
+        {
+            var assembly = AssemblyDefinition.ReadAssembly(type.Assembly.Location);
+
+            var typeRef = assembly.MainModule.Types.First(x => x.Name.Equals(type.Name));
+            return moduleToImportTo.Import(typeRef);
+
+        }
 
 
     }
