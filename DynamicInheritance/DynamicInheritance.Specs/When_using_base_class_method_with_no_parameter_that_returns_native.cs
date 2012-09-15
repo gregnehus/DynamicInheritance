@@ -7,9 +7,9 @@ namespace DynamicInheritance.Specs
     {
 
 
-        Because of = () => _result = _subject.GetBaseName();
+        Because of = () => Result = Subject.GetBaseName();
 
-        It should_return_string_from_method_with_no_parameter = () => _result.ShouldEqual("BaseType");
+        It should_return_string_from_method_with_no_parameter = () => Result.ShouldEqual("BaseType");
 
 
 

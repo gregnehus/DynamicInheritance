@@ -8,18 +8,18 @@ namespace DynamicInheritance
 {
     public static class ObjectExtensions
     {
-        public static Type AddBaseType<T>(this object obj)
+        public static dynamic GetInstanceWithBaseType<T>(this Type typeToAddBaseTo)
         {
             
-            var objType = obj.GetType().Name;
-            var newAssemblyName = obj.GetAssemblyDefinition().Name.Name;
+            var objType = typeToAddBaseTo.Name;
+            var newAssemblyName = typeToAddBaseTo.GetAssemblyDefinition().Name.Name;
 
             var resolver = new DefaultAssemblyResolver();
 
             var newModule = ModuleDefinition.CreateModule("The Module",new ModuleParameters{Runtime = TargetRuntime.Net_4_0,AssemblyResolver = resolver, Kind = ModuleKind.Dll});
             var baseType = typeof(T).GetImportedTypeReference(newModule);
 
-            var typeToCopy = obj.GetTypeDefinition();
+            var typeToCopy = typeToAddBaseTo.GetTypeDefinition();
             var methodsToCopy = typeToCopy.Methods;
 
             var newType = new TypeDefinition(newAssemblyName, objType + "New", typeToCopy.Attributes, baseType);
@@ -42,20 +42,26 @@ namespace DynamicInheritance
 
                 dynamicType = assembly.GetType(newType.FullName);
             }
-            
-            return dynamicType;
+
+
+            if (dynamicType.ContainsGenericParameters)
+            {
+                dynamicType = dynamicType.MakeGenericType(typeToAddBaseTo.GetGenericArguments());
+            }
+            var instance = Activator.CreateInstance(dynamicType);
+            return instance;
 
         }
 
 
-        public static TypeDefinition GetTypeDefinition(this object obj)
+        public static TypeDefinition GetTypeDefinition(this Type obj)
         {
-            return obj.GetAssemblyDefinition().MainModule.Types.First(x => x.Name.Equals(obj.GetType().Name));
+            return obj.GetAssemblyDefinition().MainModule.Types.First(x => x.Name.Equals(obj.Name));
 
         }
-        public static AssemblyDefinition GetAssemblyDefinition(this object obj)
+        public static AssemblyDefinition GetAssemblyDefinition(this Type obj)
         {
-            return AssemblyDefinition.ReadAssembly(obj.GetType().Assembly.Location);
+            return AssemblyDefinition.ReadAssembly(obj.Assembly.Location);
         }
         
         public static TypeReference GetImportedTypeReference(this Type type, ModuleDefinition moduleToImportTo)
