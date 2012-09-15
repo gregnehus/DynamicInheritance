@@ -15,8 +15,6 @@ namespace DynamicInheritance
 
             var resolver = new DefaultAssemblyResolver();
 
-            var aName = new AssemblyNameDefinition(newAssemblyName, new Version());
-            var assy = AssemblyDefinition.CreateAssembly(aName, objType, ModuleKind.Dll);
             
 
             var corLib = resolver.Resolve("mscorlib");
@@ -34,11 +32,10 @@ namespace DynamicInheritance
             var newType = new TypeDefinition(newAssemblyName, objType+"New", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class,newModule.TypeSystem.Object);
             
             newModule.Types.Add(newType);
-            assy.Modules.Add(newModule);
             foreach (var method in methodsToCopy)
             {
                 
-                var newMethod = method.Copy(newType, assy);
+                var newMethod = method.Copy(newType);
 
                 newType.Methods.Add(newMethod);
 
