@@ -29,7 +29,7 @@ namespace DynamicInheritance.Specs
 
         It should_retain_the_original_method_functionality = () =>
                                                                  {
-                                                                     var t = _subject.GetSuperName();
+                                                                     String t = _subject.GetSuperName();
                                                                      t.ShouldEqual("SomeObject");
                                                                  };
 
