@@ -52,6 +52,8 @@
     <Compile Include="TestClasses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="When_adding_a_base_class_to_a_defined_type.cs" />
+    <Compile Include="When_adding_a_generic_base_class_to_a_defined_type.cs" />
+    <Compile Include="When_using_base_class_method_with_no_parameter_that_returns_native.cs" />
     <Compile Include="When_using_original_class_method_with_native_parameter_that_returns_native.cs" />
     <Compile Include="When_using_original_class_method_with_no_parameter_that_returns_native.cs" />
     <Compile Include="When_using_original_class_method_with_object_parameter_that_returns_native.cs" />

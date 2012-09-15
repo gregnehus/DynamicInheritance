@@ -8,6 +8,19 @@
         }
     }
 
+    public class GenericBaseType<T>
+    {
+        public string GetBaseName()
+        {
+            return string.Format("BaseType<{0}>", typeof(T));
+        }
+    }
+
+    public class GenericSomeObject<T>
+    {
+        
+    }
+
     public class SomeObject
     {
         public string GetSuperName()

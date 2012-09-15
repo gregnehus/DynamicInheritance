@@ -22,8 +22,9 @@ namespace DynamicInheritance
             var typeToCopy = obj.GetTypeDefinition();
             var methodsToCopy = typeToCopy.Methods;
 
-            var newType = new TypeDefinition(newAssemblyName, objType + "New", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, baseType);
-            
+            var newType = new TypeDefinition(newAssemblyName, objType + "New", typeToCopy.Attributes, baseType);
+
+            typeToCopy.GenericParameters.ToList().ForEach(x => newType.GenericParameters.Add(x));
             newModule.Types.Add(newType);
 
             foreach (var method in methodsToCopy)
