@@ -2,7 +2,7 @@ using Machine.Specifications;
 
 namespace DynamicInheritance.Specs
 {
-    [Subject(typeof(ObjectExtensions))]
+    [Subject(typeof(TypeExtensions))]
     public class When_adding_a_base_class_to_a_generic_type
     {
         static object _result;
