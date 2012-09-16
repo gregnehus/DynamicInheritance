@@ -17,8 +17,11 @@ namespace DynamicInheritance
             var resolver = new DefaultAssemblyResolver();
 
             var newModule = ModuleDefinition.CreateModule("The Module",new ModuleParameters{Runtime = TargetRuntime.Net_4_0,AssemblyResolver = resolver, Kind = ModuleKind.Dll});
+            
+            
             var baseType = typeof(T).GetImportedTypeReference(newModule);
-
+            
+            
             var typeToCopy = typeToAddBaseTo.GetTypeDefinition();
             var methodsToCopy = typeToCopy.Methods;
 
@@ -69,8 +72,35 @@ namespace DynamicInheritance
             var assembly = AssemblyDefinition.ReadAssembly(type.Assembly.Location);
 
             var typeRef = assembly.MainModule.Types.First(x => x.Name.Equals(type.Name));
-            return moduleToImportTo.Import(typeRef);
 
+
+            var ret = moduleToImportTo.Import(typeRef);
+
+            if (type.IsGenericType)
+            {
+                ret = ret.MakeGenericType(moduleToImportTo, type.GetGenericArguments());
+            }
+            
+            return ret;
+
+        }
+
+        public static TypeReference MakeGenericType(this TypeReference original, ModuleDefinition moduleToImportTo, params Type[] arguments)
+        {
+            var genericType = new GenericInstanceType(original);
+
+            foreach (var param in original.GenericParameters)
+            {
+                genericType.GenericParameters.Add(param);
+            }
+
+            foreach (var arg in arguments)
+            {
+
+                genericType.GenericArguments.Add(moduleToImportTo.Import(arg));
+            }
+
+            return genericType;
         }
 
 

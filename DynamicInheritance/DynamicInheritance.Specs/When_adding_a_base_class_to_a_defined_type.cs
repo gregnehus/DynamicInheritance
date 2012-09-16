@@ -2,6 +2,7 @@ using Machine.Specifications;
 
 namespace DynamicInheritance.Specs
 {
+    
     public class When_adding_a_base_class_to_a_defined_type
     {
         static object _result;
