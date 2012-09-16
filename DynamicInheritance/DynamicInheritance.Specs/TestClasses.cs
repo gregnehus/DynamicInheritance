@@ -1,6 +1,11 @@
 ﻿namespace DynamicInheritance.Specs
 {
-    public class BaseType
+    public interface IBaseType
+    {
+        string GetBaseName();
+    }
+
+    public class BaseType : IBaseType
     {
         public string GetBaseName()
         {
@@ -21,7 +26,14 @@
         
     }
 
-    public class SomeObject
+    public interface ISomeObject
+    {
+        string GetSuperName();
+        string AddHashTag(string orig);
+        string UseInterface(IAmAnInterface inter);
+    }
+
+    public class SomeObject : ISomeObject
     {
         public string GetSuperName()
         {
