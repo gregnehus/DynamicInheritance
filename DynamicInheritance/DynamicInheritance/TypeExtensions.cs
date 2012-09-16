@@ -8,7 +8,7 @@ namespace DynamicInheritance
 {
     public static class TypeExtensions
     {
-        public static dynamic GetInstanceWithBaseType<T>(this Type typeToAddBaseTo)
+        public static T GetInstanceWithBaseType<T>(this Type typeToAddBaseTo) where T : class
         {
             
             var objType = typeToAddBaseTo.Name;
@@ -58,7 +58,7 @@ namespace DynamicInheritance
                 dynamicType = dynamicType.MakeGenericType(typeToAddBaseTo.GetGenericArguments());
             }
             var instance = Activator.CreateInstance(dynamicType);
-            return instance;
+            return instance as T;
 
         }
 
