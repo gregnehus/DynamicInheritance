@@ -8,6 +8,7 @@
     public class BaseType : IBaseType
     {
         public string name = "peach";
+        
         public BaseType()
         {
             string p = "s";
@@ -41,6 +42,7 @@
     public class SomeObject : ISomeObject
     {
         public string name;
+        public string subName = "cherry";
         public string GetSuperName()
         {
             return "SomeObject";
@@ -59,6 +61,11 @@
         {
             return name;
         }
+        public string GetSubField()
+        {
+            return subName;
+        }
+
     }
 
     public interface IAmAnInterface
