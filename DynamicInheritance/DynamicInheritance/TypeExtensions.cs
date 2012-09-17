@@ -27,6 +27,8 @@ namespace DynamicInheritance
 
             var newType = new TypeDefinition(newAssemblyName, objType + "New", typeToCopy.Attributes, baseType);
 
+            var baseDefinition = baseType.Resolve();
+
             foreach(var iface in typeToCopy.Interfaces)
             {
                 newType.Interfaces.Add(newModule.Import(iface));
@@ -35,12 +37,17 @@ namespace DynamicInheritance
 
             typeToCopy.GenericParameters.ToList().ForEach(x => newType.GenericParameters.Add(x));
             newModule.Types.Add(newType);
-
+            //foreach (var field in typeToCopy.Fields)
+            //{
+            //    var newField = field.Copy(newType);
+            //    newType.Fields.Add(newField);
+            //}
             foreach (var method in methodsToCopy)
             {
-                var newMethod = method.Copy(newType);
+                var newMethod = method.Copy(newType, baseDefinition, typeof(T));
                 newType.Methods.Add(newMethod);
             }
+            
 
 
             Type dynamicType;

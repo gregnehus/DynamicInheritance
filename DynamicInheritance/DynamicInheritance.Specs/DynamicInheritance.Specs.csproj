@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="When_using_a_method_that_uses_a_field_that_is_in_base_class.cs" />
     <Compile Include="TestClasses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="When_adding_a_base_class_to_a_defined_type.cs" />

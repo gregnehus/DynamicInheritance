@@ -8,7 +8,15 @@ namespace DynamicInheritance
 {
     public static class CecilExtensions
     {
-        public static MethodDefinition Copy(this MethodDefinition methodToCopy, TypeDefinition typeToAddMethodTo)
+        public static FieldDefinition Copy(this FieldDefinition fieldToCopy, TypeDefinition typeToAddFieldTo)
+        {
+            var targetModule = typeToAddFieldTo.Module;
+            var newField = new FieldDefinition(fieldToCopy.Name, fieldToCopy.Attributes, targetModule.Import(fieldToCopy.FieldType));
+            newField.InitialValue = fieldToCopy.InitialValue;
+
+            return newField;
+        }
+        public static MethodDefinition Copy(this MethodDefinition methodToCopy, TypeDefinition typeToAddMethodTo, TypeDefinition baseTypeDefinition, Type baseType)
         {
             var targetModule = typeToAddMethodTo.Module;
 
@@ -24,6 +32,8 @@ namespace DynamicInheritance
             {
                 newMethod.Parameters.Add(new ParameterDefinition(targetModule.Import(parameterDefinition.ParameterType)));
             }
+
+            
             foreach (var instruction in methodToCopy.Body.Instructions)
             {
                 var constructorInfo = typeof(Instruction).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(OpCode), typeof(object) }, null);
@@ -33,18 +43,33 @@ namespace DynamicInheritance
                 if (fieldDefinition != null)
                 {
                     targetModule.Import(fieldDefinition.FieldType);
-                    newInstruction.Operand = typeToAddMethodTo.Fields.First(x => x.Name == fieldDefinition.Name);
+
+
+                    newInstruction.Operand = typeToAddMethodTo.Fields.FirstOrDefault(x => x.Name == fieldDefinition.Name);
+
+                    if (newInstruction.Operand == null)
+                    {
+                        var importedField = targetModule.Import(baseTypeDefinition.Fields.First(x => x.Name == fieldDefinition.Name));
+                        newInstruction.Operand = importedField;
+                    }
+                    
                 }
 
                 if (newInstruction.Operand is MethodReference)
                 {
+                    
                     var method = (MethodReference)newInstruction.Operand;
 
+                    if (methodToCopy.IsConstructor)
+                    {
+                        method = baseTypeDefinition.Methods.First(x => x.IsConstructor && !x.HasParameters);
+                        if (baseTypeDefinition.HasGenericParameters)
+                            method = method.MakeGeneric(targetModule, baseType.GetGenericArguments());
+
+                    }
+
                     var imported = targetModule.Import(method);
-                    var refff = targetModule.Import(method.ReturnType).Resolve();
-
-
-
+                    
                     newInstruction = Instruction.Create(newInstruction.OpCode, imported);
 
 
@@ -55,6 +80,9 @@ namespace DynamicInheritance
                 }
                 newMethod.Body.Instructions.Add(newInstruction);
             }
+
+
+            
 
             return newMethod;
         }
@@ -103,6 +131,25 @@ namespace DynamicInheritance
             }
 
             return genericType;
+        }
+
+        public static MethodReference MakeGeneric(this MethodReference self, ModuleDefinition module, params Type[] arguments)
+        {
+            var reference = new MethodReference(self.Name, self.ReturnType)
+            {
+                DeclaringType = self.DeclaringType.MakeGenericType( module,arguments),
+                HasThis = self.HasThis,
+                ExplicitThis = self.ExplicitThis,
+                CallingConvention = self.CallingConvention,
+            };
+
+            foreach (var parameter in self.Parameters)
+                reference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+
+            foreach (var generic_parameter in self.GenericParameters)
+                reference.GenericParameters.Add(new GenericParameter(generic_parameter.Name, reference));
+
+            return reference;
         }
     }
 }
