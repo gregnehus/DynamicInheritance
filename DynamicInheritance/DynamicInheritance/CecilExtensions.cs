@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Collections.Generic;
 
 namespace DynamicInheritance
 {
@@ -11,8 +12,15 @@ namespace DynamicInheritance
         public static FieldDefinition Copy(this FieldDefinition fieldToCopy, TypeDefinition typeToAddFieldTo)
         {
             var targetModule = typeToAddFieldTo.Module;
-            var newField = new FieldDefinition(fieldToCopy.Name, fieldToCopy.Attributes, targetModule.Import(fieldToCopy.FieldType));
-            newField.InitialValue = fieldToCopy.InitialValue;
+
+            var fieldType = fieldToCopy.FieldType;
+            if (fieldType.HasGenericParameters)
+            {
+                fieldType = fieldType.MakeGenericType(targetModule, ((GenericInstanceType) fieldType).GenericArguments);
+            }
+
+            
+            var newField = new FieldDefinition(fieldToCopy.Name, fieldToCopy.Attributes, targetModule.Import(fieldType));
 
             return newField;
         }
@@ -60,14 +68,17 @@ namespace DynamicInheritance
                     
                     var method = (MethodReference)newInstruction.Operand;
 
-                    if (methodToCopy.IsConstructor)
+                    if (methodToCopy.IsConstructor && newInstruction.OpCode == OpCodes.Call)
                     {
                         method = baseTypeDefinition.Methods.First(x => x.IsConstructor && !x.HasParameters);
                         if (baseTypeDefinition.HasGenericParameters)
                             method = method.MakeGeneric(targetModule, baseType.GetGenericArguments());
 
+                    }else if(methodToCopy.IsConstructor && newInstruction.OpCode == OpCodes.Newobj)
+                    {
+                        
                     }
-
+                    
                     var imported = targetModule.Import(method);
                     
                     newInstruction = Instruction.Create(newInstruction.OpCode, imported);
@@ -77,6 +88,18 @@ namespace DynamicInheritance
                 if (newInstruction.Operand is TypeReference)
                 {
                     targetModule.Import(newInstruction.Operand as TypeReference);
+                }
+                if (newInstruction.OpCode == OpCodes.Stfld)
+                {
+                    var field = (FieldReference) newInstruction.Operand;
+
+                    var baseField = baseTypeDefinition.Fields.FirstOrDefault(x => x.Name.Equals(field.Name));
+
+                    if (baseField != null)
+                    {
+                        var importedBaseField = baseField.Copy(typeToAddMethodTo);
+                        newInstruction = Instruction.Create(newInstruction.OpCode, importedBaseField);
+                    }
                 }
                 newMethod.Body.Instructions.Add(newInstruction);
             }
@@ -104,6 +127,14 @@ namespace DynamicInheritance
             var typeRef = assembly.MainModule.Types.First(x => x.Name.Equals(type.Name));
 
 
+
+            return typeRef.GetImportedTypeReference(type, moduleToImportTo);
+
+        }
+
+        public static TypeReference GetImportedTypeReference(this TypeReference typeRef, Type type, ModuleDefinition moduleToImportTo)
+        {
+            
             var ret = moduleToImportTo.Import(typeRef);
 
             if (type.IsGenericType)
@@ -128,6 +159,24 @@ namespace DynamicInheritance
             {
 
                 genericType.GenericArguments.Add(moduleToImportTo.Import(arg));
+            }
+
+            return genericType;
+        }
+
+        public static TypeReference MakeGenericType(this TypeReference original, ModuleDefinition moduleToImportTo, Collection<TypeReference> arguments)
+        {
+            var genericType = new GenericInstanceType(original);
+
+            foreach (var param in original.GenericParameters)
+            {
+                genericType.GenericParameters.Add(param);
+            }
+
+            foreach (var arg in arguments)
+            {
+
+                genericType.GenericArguments.Add(arg);
             }
 
             return genericType;

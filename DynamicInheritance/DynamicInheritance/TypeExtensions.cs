@@ -37,8 +37,19 @@ namespace DynamicInheritance
 
             typeToCopy.GenericParameters.ToList().ForEach(x => newType.GenericParameters.Add(x));
             newModule.Types.Add(newType);
-            foreach (var field in typeToCopy.Fields.Where(x=> !baseDefinition.Fields.Any(y=>y.Name.Equals(x.Name))))
+            foreach (var field in typeToCopy.Fields)
             {
+                var baseField = baseDefinition.Fields.FirstOrDefault(y => y.Name.Equals(field.Name));
+                if (baseField != null)
+                {
+
+                    var newBaseField = baseField.Copy(newType);
+                    newType.Fields.Add(newBaseField);
+
+                    continue;
+                }
+
+
                 var newField = field.Copy(newType);
                 newType.Fields.Add(newField);
             }
