@@ -47,11 +47,11 @@ namespace DynamicInheritance
                 var constructorInfo = typeof(Instruction).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(OpCode), typeof(object) }, null);
                 var newInstruction = (Instruction)constructorInfo.Invoke(new[] { instruction.OpCode, instruction.Operand });
                 var fieldDefinition = newInstruction.Operand as FieldDefinition;
+                var fieldReference = newInstruction.Operand as FieldReference;
 
+                
                 if (fieldDefinition != null)
                 {
-                    targetModule.Import(fieldDefinition.FieldType);
-
 
                     newInstruction.Operand = typeToAddMethodTo.Fields.FirstOrDefault(x => x.Name == fieldDefinition.Name);
 
@@ -61,6 +61,19 @@ namespace DynamicInheritance
                         newInstruction.Operand = importedField;
                     }
                     
+                }else if(fieldReference != null)
+                {
+                    newInstruction.Operand = typeToAddMethodTo.Fields.FirstOrDefault(x => x.Name == fieldReference.Name);
+                    
+                    if (newInstruction.Operand == null)
+                    {
+                        var importedField = baseTypeDefinition.Fields.First(x => x.Name == fieldReference.Name);
+
+                        var n = new FieldReference(fieldReference.Name, importedField.FieldType, importedField.DeclaringType);
+                        var field = importedField.Copy(typeToAddMethodTo);
+                        
+                        newInstruction.Operand = targetModule.Import(importedField);
+                    }
                 }
 
                 if (newInstruction.Operand is MethodReference)
@@ -89,18 +102,13 @@ namespace DynamicInheritance
                 {
                     targetModule.Import(newInstruction.Operand as TypeReference);
                 }
-                if (newInstruction.OpCode == OpCodes.Stfld)
+                if (newInstruction.Operand is MemberReference)
                 {
-                    var field = (FieldReference) newInstruction.Operand;
+                    var method = newInstruction.Operand as MemberReference;
 
-                    var baseField = baseTypeDefinition.Fields.FirstOrDefault(x => x.Name.Equals(field.Name));
-
-                    if (baseField != null)
-                    {
-                        var importedBaseField = baseField.Copy(typeToAddMethodTo);
-                        newInstruction = Instruction.Create(newInstruction.OpCode, importedBaseField);
-                    }
+                    //newInstruction = Instruction.Create(newInstruction.OpCode, method);
                 }
+               
                 newMethod.Body.Instructions.Add(newInstruction);
             }
 

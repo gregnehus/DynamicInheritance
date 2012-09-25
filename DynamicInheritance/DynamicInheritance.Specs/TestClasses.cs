@@ -7,8 +7,8 @@
 
     public class BaseType : IBaseType
     {
-        public string name = "peach";
-        
+        protected string name = "peach";
+        public SomeFieldType member;
         public BaseType()
         {
             string p = "s";
@@ -37,11 +37,14 @@
         string GetSuperName();
         string AddHashTag(string orig);
         string UseInterface(IAmAnInterface inter);
+        string SetField(string str);
+        object SetMember(SomeFieldType blah);
     }
 
     public class SomeObject : ISomeObject
     {
         public string name;
+        public object member;
         public string subName = "cherry";
         public string GetSuperName()
         {
@@ -61,13 +64,30 @@
         {
             return name;
         }
+
+        public string SetField(string str)
+        {
+            name = str;
+            return GetField();
+        }
+
+        public object SetMember(SomeFieldType blah)
+        {
+            member = blah;
+            return GetMember();
+        }
+
+        public object GetMember()
+        {
+            return member;
+        }
         public string GetSubField()
         {
             return subName;
         }
 
     }
-
+    public class SomeFieldType{}
     public interface IAmAnInterface
     {
         string DoSomething();
