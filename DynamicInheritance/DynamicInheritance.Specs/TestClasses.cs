@@ -1,4 +1,7 @@
-﻿namespace DynamicInheritance.Specs
+﻿using System;
+using Mono.Cecil;
+
+namespace DynamicInheritance.Specs
 {
     public interface IBaseType
     {
@@ -91,5 +94,20 @@
     public interface IAmAnInterface
     {
         string DoSomething();
+    }
+
+
+    public class BaseClassWithFieldFromOtherAssembly
+    {
+        protected AssemblyNameDefinition _assemblyName;
+    }
+    public class AnotherClass
+    {
+        public object _assemblyName;
+     
+        public void SetAssembly(object assy)
+        {
+            _assemblyName = assy;
+        }
     }
 }
